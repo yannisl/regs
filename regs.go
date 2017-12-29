@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 	"strconv"
+	"regexp"
 )
 
 const (
@@ -123,8 +124,41 @@ func (r *Rules) String() string {
 	return s
 }
 
-func (r *Rules) Compile()  {
+// MustCompile compiles all the rules into a singular regular expression and returns
+// the expression.
+func (r *Rules) MustCompile() *regexp.Regexp  {
+	var ss []string
+	elements:=r.Values()
+	for _,reg:=range elements{
+		ss=append(ss,reg.pattern)
+	}	
+	s:=strings.Join(ss,"|")
+	re:=regexp.MustCompile(s)
+	return re
+}
 
+// MatchString matches the string against all the rules.
+func (r *Rules) MatchString(s string) bool {
+	re:=r.MustCompile()
+	if re.MatchString(s) {
+		return true
+	}
+	
+	return false	
+}
+
+// Match the string against the slice of expressions
+// and return the rule that matched
+func (r *Rules) Verbose(s string) (string, bool) {
+	elements := r.Values() 
+	for _, reg := range elements{
+		re:=regexp.MustCompile(reg.pattern)
+		if re.MatchString(s){
+			return reg.name + " rule", true
+		}
+
+	}
+	return "no match", false
 }
 
 
